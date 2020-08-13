@@ -39,3 +39,19 @@ curve_moore <- function(order) {
 curve_hilbert <- function(order) {
   as.data.frame(pracma::fractalcurve(order, "hilbert"))
 }
+
+curve_flowsnake <- function(order) {
+  as.data.frame(pracma::fractalcurve(order, "flowsnake"))
+}
+
+curve_sierpinski <- function(order) {
+  as.data.frame(pracma::fractalcurve(order, "sierpinski"))
+}
+
+
+curve_interp <- function(curve_df, pos, limits = range(pos)) {
+  curve_len <- nrow(curve_df)
+  all_pos <- seq(limits[1], limits[2], length.out = curve_len)
+  data.frame(x = approx(all_pos, curve_df$x, xout = pos)$y,
+             y = approx(all_pos, curve_df$y, xout = pos)$y)
+}
