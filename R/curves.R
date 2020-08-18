@@ -45,8 +45,8 @@ curve_hilbert <- function(order) {
 
 curve_flowsnake <- function(order) {
   flowsnake_pnts <- .sfc$fractalcurve(order, "flowsnake")
-  flowsnake_pnts$x <- scales::rescale(flowsnake_pnts$x, -1, 1)
-  flowsnake_pnts$y <- scales::rescale(flowsnake_pnts$y, -1, 1)
+  flowsnake_pnts$x <- scales::rescale(flowsnake_pnts$x, c(-1, 1))
+  flowsnake_pnts$y <- scales::rescale(flowsnake_pnts$y, c(-1, 1))
   as.data.frame(flowsnake_pnts)
 }
 
