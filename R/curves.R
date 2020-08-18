@@ -1,16 +1,19 @@
 curve_n_pnts <- function(curve = c("hilbert", "flowsnake", "sierpinski", "moore"),
                          order = 6) {
+  
+  curve <- match.arg(curve)
+  
   switch(curve,
          hilbert = 4^order,
          flowsnake = 7^order + 1,
          sierpinski = 4^(order + 1) + 1,
-         moore = 4^order * 4,
-         NULL)
+         moore = 4^order * 4)
+  
 }
 
 curve_moore <- function(order) {
 
-  pnts <- pracma::fractalcurve(order, "hilbert")
+  pnts <- .sfc$fractalcurve(order, "hilbert")
 
   x_grid <- unique(pnts$x)
   x_grid <- x_grid[order(x_grid)]
@@ -37,21 +40,93 @@ curve_moore <- function(order) {
 }
 
 curve_hilbert <- function(order) {
-  as.data.frame(pracma::fractalcurve(order, "hilbert"))
+  as.data.frame(.sfc$fractalcurve(order, "hilbert"))
 }
 
 curve_flowsnake <- function(order) {
-  as.data.frame(pracma::fractalcurve(order, "flowsnake"))
+  as.data.frame(.sfc$fractalcurve(order, "flowsnake"))
 }
 
 curve_sierpinski <- function(order) {
-  as.data.frame(pracma::fractalcurve(order, "sierpinski"))
+  as.data.frame(.sfc$fractalcurve(order, "sierpinski"))
 }
 
+#' Make a space-filling curve object
+#' 
+#' This function creates a space-filling curve of a particular order and type.
+#'
+#' @param curve Which space-filling curve to make? Must be one of: "hilbert", "flowsnake", 
+#' "sierpinski", or "moore". See details for descriptions.
+#' @param order What order should the curve be? This controls the "length" of the fractal curve 
+#' (e.g. how many points are there in it?). In other words, higher order curves fill the space more.
+#' @param len An alternative way to specify order. Instead, specify the "length" of the curve you want.
+#' If specified, the order will be determined as the order producing a curve length closest to \code{len}
+#' @param limits The values you want to use as the beginning and end of your curve. This will typically
+#' be determined by your data. See details for examples.
+#'
+#' @return An object of class \code{sfcurve}
+#' @export
+#'
+#' @examples
+#' sf_curve <- sfcurve("moore", order = 5)
+#' plot(sf_curve, col = rainbow(nrow(sf_curve)))
+sfcurve <- function(curve = c("hilbert", "flowsnake", "sierpinski", "moore"), order = NULL, len = NULL,
+                    limits = c(-1, 1)) {
+  
+  curve <- match.arg(curve)
+  
+  if(is.null(order) && is.null(len)) {
+    stop("You must specify either order or n_pts.")
+  } 
+  
+  if(is.null(order) && !is.null(len)) {
+    dists <- sqrt((len - sapply(1:20, function(x) curve_n_pnts(curve, x))) ^ 2)
+    order <- (1:20)[which.min(dists)]
+  }
+  
+  sfcurve <- switch(curve,
+                    hilbert = curve_hilbert(order),
+                    flowsnake = curve_flowsnake(order),
+                    sierpinski = curve_sierpinski(order),
+                    moore = curve_moore(order))
+  
+  attr(sfcurve, "curve_interp") <- curve_interp(sfcurve, limits)
+  
+  class(sfcurve) <- c("sfcurve", "data.frame")
+  
+  sfcurve
+  
+  
+}
 
-curve_interp <- function(curve_df, pos, limits = range(pos)) {
+curve_interp <- function(curve_df, limits = range(pos)) {
   curve_len <- nrow(curve_df)
   all_pos <- seq(limits[1], limits[2], length.out = curve_len)
-  data.frame(x = approx(all_pos, curve_df$x, xout = pos)$y,
-             y = approx(all_pos, curve_df$y, xout = pos)$y)
+  
+  approx_x <- stats::approxfun(all_pos, curve_df$x)
+  approx_y <- stats::approxfun(all_pos, curve_df$y)
+  
+  function(pos) {
+    data.frame(x = approx_x(pos),
+               y = approx_y(pos))
+  }
+  
+}
+
+#' Plot an sfcurve object
+#'
+#' @param x An \code{sfcurve} object
+#' @param y Not used 
+#' @param ... Further argument to be passed to or from other methods.
+#'
+#' @export
+plot.sfcurve <- function(x, y, ...) {
+  class(x) <- "data.frame"
+  args <- list(...)
+  if("col" %in% names(args)) {
+    plot(x, type = "n", asp = 1)
+    graphics::segments(utils::head(x$x, -1), utils::head(x$y, -1), x$x[-1], x$y[-1], col = args$col)
+  } else {
+    do.call(plot, c(list(x = x, type = "l", asp = 1), args))
+  }
 }
