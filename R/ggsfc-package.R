@@ -11,6 +11,7 @@ utils::globalVariables(c("pos"))
 ## usethis namespace: end
 NULL
 
+#'@import ggplot2
 .onLoad <- function(libname, pkgname) {
   .sfc$fractalcurve <- memoise::memoise(pracma::fractalcurve)
 }

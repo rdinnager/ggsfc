@@ -19,5 +19,6 @@ Imports:
     graphics,
     stats,
     utils,
-    scales,
+    scales
+Depends:
     ggplot2

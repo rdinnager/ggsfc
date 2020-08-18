@@ -2,3 +2,4 @@
 
 S3method(plot,sfcurve)
 export(sfcurve)
+import(ggplot2)
