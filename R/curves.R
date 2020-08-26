@@ -133,3 +133,17 @@ plot.sfcurve <- function(x, y, ...) {
     do.call(plot, c(list(x = x, type = "l", asp = 1), args))
   }
 }
+
+#' @importFrom sf st_as_sf
+#' @export
+sf::st_as_sf
+
+#' @method st_as_sf sfcurve
+#' @export
+st_as_sf.sfcurve <- function(x, ...) {
+  
+  y <- sf::st_as_sf(sf::st_as_sfc(list(sf::st_linestring(as.matrix(x)))))
+  
+  y
+  
+}

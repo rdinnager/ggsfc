@@ -1,0 +1,94 @@
+---
+title: "ggsfc_intro"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ggsfc_intro}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ggsfc)
+library(sf)
+
+flowsnake <- ggsfc::sfcurve("flowsnake", order = 6)
+
+test <- st_as_sf(flowsnake)
+
+dist_size <- dist(flowsnake[1:2, 1:2]) / 6
+
+make_parallel_curve <- function(x, d) {
+  
+  x_end <- sf::st_line_sample(x, sample = 1) %>%
+    sf::st_as_sf()
+  
+  x_start <- sf::st_line_sample(x, sample = 0) %>%
+    sf::st_as_sf()
+  
+  buff_line <- sf::st_buffer(x, d, endCapStyle = "FLAT", joinStyle = "MITRE", singleSide = TRUE, mitreLimit = 100)
+  
+  buff_coords <- sf::st_cast(buff_line, "LINESTRING") %>%
+    sf::st_cast("POINT")
+
+  par_line <- buff_coords %>%
+    sf::st_coordinates()
+  
+  if(d < 0) {
+    curve_end <- which.min(sf::st_distance(buff_coords, x_end)[ , 1])
+    par_line <- par_line[(curve_end + 1L):(nrow(par_line) - 1L), ]
+  } else {
+    curve_start <- which.min(sf::st_distance(buff_coords, x_start)[ , 1])
+    par_line <- par_line[(curve_start + 1L):(nrow(par_line) - 1L), ]
+  }
+  
+  par_line <- par_line %>%
+    sf::st_linestring() %>%
+    list() %>%
+    sf::st_as_sfc() %>%
+    sf::st_as_sf()
+
+  par_line
+  
+}
+
+curve_2 <- make_parallel_curve(test, -dist_size)
+curve_3 <- make_parallel_curve(test, dist_size)
+
+plot(test)
+plot(curve_2, col = "red", add = TRUE)
+plot(curve_3, col = "blue", add = TRUE)
+
+png("/mnt/d/Misc/flowsnake_illusion3.png", width = 960, height = 960, antialias = "gray")
+plot(test, lwd = 0.5)
+plot(curve_2, col = "red", add = TRUE, lwd = 0.5)
+plot(curve_3, col = "blue", add = TRUE, lwd = 0.5)
+dev.off()
+
+test2 <- sf::st_buffer(test, -dist_size, endCapStyle = "FLAT", joinStyle = "MITRE", singleSide = TRUE, mitreLimit = 100)
+test3 <- sf::st_buffer(test, dist_size, endCapStyle = "FLAT", joinStyle = "MITRE", singleSide = TRUE, mitreLimit = 100)
+
+line_1_coords <- sf::st_cast(test2, "LINESTRING") %>%
+  sf::st_cast("POINT")
+
+line_1_end <- which.min(sf::st_distance(line_1_coords, fs_end)[ , 1])
+
+new_line_1 <- line_1_coords %>%
+  sf::st_coordinates()
+new_line_1 <- new_line_1[(line_1_end + 1L):(nrow(new_line_1) - 1L), ] %>%
+  sf::st_linestring() %>%
+    list() %>%
+  sf::st_as_sfc() %>%
+  sf::st_as_sf()
+
+plot(test)
+plot(new_line_1, col = "red", add = TRUE)
+
+
+```

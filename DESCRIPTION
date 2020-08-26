@@ -19,6 +19,12 @@ Imports:
     graphics,
     stats,
     utils,
-    scales
+    scales,
+    sf,
+    magrittr
 Depends:
     ggplot2
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
