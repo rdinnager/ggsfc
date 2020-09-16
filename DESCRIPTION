@@ -21,10 +21,15 @@ Imports:
     utils,
     scales,
     sf,
-    magrittr
+    magrittr,
+    rlang (>= 0.1.2),
+    dplyr,
+    tidyr
 Depends:
     ggplot2
 Suggests: 
     knitr,
-    rmarkdown
+    rmarkdown,
+    vcfR,
+    roxygen2
 VignetteBuilder: knitr

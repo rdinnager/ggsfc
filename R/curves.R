@@ -73,8 +73,9 @@ curve_sierpinski <- function(order) {
 #' @examples
 #' sf_curve <- sfcurve("moore", order = 5)
 #' plot(sf_curve, col = rainbow(nrow(sf_curve)))
-sfcurve <- function(curve = c("hilbert", "flowsnake", "sierpinski", "moore"), order = NULL, len = NULL,
-                    limits = c(-1, 1)) {
+sfcurve <- function(data, pos_vars, 
+                    curve = c("hilbert", "flowsnake", "sierpinski", "moore"), order = NULL, len = NULL,
+                    limits = NULL, split_by = NULL) {
   
   curve <- match.arg(curve)
   
@@ -93,12 +94,26 @@ sfcurve <- function(curve = c("hilbert", "flowsnake", "sierpinski", "moore"), or
                     sierpinski = curve_sierpinski(order),
                     moore = curve_moore(order))
   
-  attr(sfcurve, "curve_interp") <- curve_interp(sfcurve, limits)
+  pos_dat <- dplyr::select(data, {{ pos_vars }}) 
+  
+  if(is.null(limits)) {
+    limits <- range(pos_dat)
+  }
+  
+  pos_dat <- pos_dat %>%
+    dplyr::mutate(dplyr::across({{ pos_vars }},
+                                ~ curve_interp(sfcurve, limits)(.))) %>%
+    tidyr::unpack(cols = {{ pos_vars }}, names_sep = "_") %>%
+    dplyr::bind_cols(data)
+  
+  sfcurve <- sfcurve %>%
+    dplyr::mutate(what = "curve") %>%
+    dplyr::bind_rows(pos_dat %>%
+                       dplyr::mutate(what = "data"))
   
   class(sfcurve) <- c("sfcurve", "data.frame")
   
   sfcurve
-  
   
 }
 
@@ -147,3 +162,5 @@ st_as_sf.sfcurve <- function(x, ...) {
   y
   
 }
+
+

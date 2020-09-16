@@ -14,9 +14,30 @@ knitr::opts_chunk$set(
 )
 ```
 
+
 ```{r setup}
 library(ggsfc)
 library(sf)
+
+```
+
+```{r try_out}
+data("sim_snps")
+
+curve <- sfcurve(sim_snps, pos, order = 5)
+
+curve <- sfcurve(sim_snps %>% dplyr::mutate(pos2 = pos + 1), 
+                 c(pos, pos2), order = 5)
+
+tt <- ggsfc(sim_snps, order = 5) +
+  geom_sfc_path() +
+  geom_sfc_points(aes(pos = pos))
+tt
+```
+
+
+
+```{r tests}
 
 flowsnake <- ggsfc::sfcurve("flowsnake", order = 6)
 

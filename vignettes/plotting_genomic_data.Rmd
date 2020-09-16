@@ -1,0 +1,46 @@
+---
+title: "plotting_genomic_data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{plotting_genomic_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ggsfc)
+library(vcfR)
+library(dplyr)
+library(tidyr)
+library(tibble)
+```
+
+In this vignette I will show you how to plot some genomic data using space-filling curves. We will use data on single nucleotide polymorphisms (SNPs) provided in the `vcfR` package. First let's grab a the dataset on *Phytophthora infestans* from `vcfR` and convert it into a `tibble` we can plot with `ggsfc`. We will just get the positions along the chromosome where there are SNPs and visualize that in a couple different ways.
+
+```{r get_data}
+data("vcfR_example", package = "vcfR")
+snp_tidy <- vcfR2tidy(vcf)
+
+snps <- snp_tidy$fix %>%
+  select(position = POS)
+
+
+bandicoot_snps <- as.data.frame(bandicoot.gl) %>%
+  rownames_to_column(var = "sample") %>%
+  mutate(pop = pop(bandicoot.gl)) %>%
+  pivot_longer(cols = c(-sample, -pop), names_to = "snp", values_to = "alt_alleles") %>%
+  left_join(tibble(snp = bandicoot.gl$loc.names, fake_pos = 1:ncol(bandicoot.gl))) 
+
+bandicoot_freqs <- bandicoot_snps %>%
+  group_by(pop, snp, fake_pos) %>%
+  summarise(freq = mean(alt_alleles, na.rm = TRUE) / 2)
+```
+
+

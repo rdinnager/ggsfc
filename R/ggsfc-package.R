@@ -3,6 +3,7 @@
 utils::globalVariables(c("pos"))
 
 #' @keywords internal
+#' @aliases ggsfc-package
 "_PACKAGE"
 
 # The following block is used by usethis to automatically manage

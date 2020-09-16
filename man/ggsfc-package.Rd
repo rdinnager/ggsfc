@@ -2,8 +2,8 @@
 % Please edit documentation in R/ggsfc-package.R
 \docType{package}
 \name{ggsfc-package}
-\alias{ggsfc}
 \alias{ggsfc-package}
+\alias{_PACKAGE}
 \title{ggsfc: What the Package Does (One Line, Title Case)}
 \description{
 What the package does (one paragraph).
