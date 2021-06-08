@@ -75,9 +75,12 @@ curve_sierpinski <- function(order) {
 #' plot(sf_curve, col = rainbow(nrow(sf_curve)))
 sfcurve <- function(data, pos_vars, 
                     curve = c("hilbert", "flowsnake", "sierpinski", "moore"), order = NULL, len = NULL,
-                    limits = NULL, split_by = NULL) {
+                    limits = NULL, split_by = NULL, 
+                    split_arrange = c("interleave", "tile"),
+                    interleave_space = 0.5) {
   
   curve <- match.arg(curve)
+  split_arrange <- match.arg(split_arrange)
   
   if(is.null(order) && is.null(len)) {
     stop("You must specify either order or n_pts.")
@@ -88,7 +91,7 @@ sfcurve <- function(data, pos_vars,
     order <- (1:20)[which.min(dists)]
   }
   
-  sfcurve <- switch(curve,
+  sf_curve <- switch(curve,
                     hilbert = curve_hilbert(order),
                     flowsnake = curve_flowsnake(order),
                     sierpinski = curve_sierpinski(order),
@@ -100,20 +103,52 @@ sfcurve <- function(data, pos_vars,
     limits <- range(pos_dat)
   }
   
+  if(!is.null(split_by)) {
+    
+    split_groups <- dplyr::select(data, {{ split_by }})
+    num_groups <- dplyr::n_distinct(split_groups)
+    
+    if(split_arrange == "interleave") {
+      lines_to_draw <- num_groups - 1L
+      curve_sf <- convert_to_sf(sf_curve)
+      
+      dist_size <- dist(sf_curve[1:2, 1:2]) * interleave_space
+      
+      dist_lines <- seq(-dist_size, dist_size, length.out = num_groups)
+      
+      if(num_groups %% 2 != 0) {
+        dist_lines <- dist_lines[-ceiling(num_groups / 2)]
+      }
+      
+      new_curves <- purrr::map(dist_lines,
+                               ~make_parallel_curve(curve_sf, .x))
+      
+    }
+    
+    
+    
+    
+  }
+  
+  interp <- curve_interp(sf_curve, limits)
+  
   pos_dat <- pos_dat %>%
     dplyr::mutate(dplyr::across({{ pos_vars }},
-                                ~ curve_interp(sfcurve, limits)(.))) %>%
-    tidyr::unpack(cols = {{ pos_vars }}, names_sep = "_") %>%
-    dplyr::bind_cols(data)
+                                ~ interp(.) %>%
+                                  dplyr::mutate(what = "data") %>%
+                                  purrr::transpose())) %>%
+    dplyr::bind_cols(data %>%
+                       dplyr::rename_with(~paste0(.x, "_orig"), {{ pos_vars }}))
   
-  sfcurve <- sfcurve %>%
+  sf_curve <- sf_curve %>%
     dplyr::mutate(what = "curve") %>%
-    dplyr::bind_rows(pos_dat %>%
-                       dplyr::mutate(what = "data"))
+    purrr::transpose() %>%
+    dplyr::tibble(pos = .) %>%
+    dplyr::bind_rows(pos_dat)
   
-  class(sfcurve) <- c("sfcurve", "data.frame")
+  class(sf_curve) <- c("sfcurve", "data.frame")
   
-  sfcurve
+  sf_curve
   
 }
 
@@ -131,7 +166,7 @@ curve_interp <- function(curve_df, limits = range(pos)) {
   
 }
 
-#' Plot an sfcurve object
+#' Plot an sf_curve object
 #'
 #' @param x An \code{sfcurve} object
 #' @param y Not used 
@@ -160,6 +195,47 @@ st_as_sf.sfcurve <- function(x, ...) {
   y <- sf::st_as_sf(sf::st_as_sfc(list(sf::st_linestring(as.matrix(x)))))
   
   y
+  
+}
+
+convert_to_sf <- function(x) {
+  
+  y <- sf::st_as_sf(sf::st_as_sfc(list(sf::st_linestring(as.matrix(x)))))
+  
+  y
+}
+
+make_parallel_curve <- function(x, d) {
+  
+  x_end <- sf::st_line_sample(x, sample = 1) %>%
+    sf::st_as_sf()
+  
+  x_start <- sf::st_line_sample(x, sample = 0) %>%
+    sf::st_as_sf()
+  
+  buff_line <- sf::st_buffer(x, d, endCapStyle = "FLAT", joinStyle = "MITRE", singleSide = FALSE, mitreLimit = 100)
+  
+  buff_coords <- sf::st_cast(buff_line, "LINESTRING") %>%
+    sf::st_cast("POINT")
+  
+  par_line <- buff_coords %>%
+    sf::st_coordinates()
+  
+  if(d < 0) {
+    curve_end <- which.min(sf::st_distance(buff_coords, x_end)[ , 1])
+    par_line <- par_line[(curve_end + 1L):(nrow(par_line) - 1L), ]
+  } else {
+    curve_start <- which.min(sf::st_distance(buff_coords, x_start)[ , 1])
+    par_line <- par_line[(curve_start + 1L):(nrow(par_line) - 1L), ]
+  }
+  
+  par_line <- par_line %>%
+    sf::st_linestring() %>%
+    list() %>%
+    sf::st_as_sfc() %>%
+    sf::st_as_sf()
+  
+  par_line
   
 }
 

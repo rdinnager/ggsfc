@@ -7,33 +7,47 @@
 #' @export
 #'
 #' @examples
-ggsfc <- function(data, curve = c("hilbert", "flowsnake", "sierpinski", "moore"), 
-                  order = NULL, ...) {
+ggsfc <- function(data, ...) {
+  UseMethod("ggsfc", data)
+}
+
+#'@export
+ggsfc.data.frame <- function(data, pos_vars, 
+                             curve = c("hilbert", "flowsnake", "sierpinski", "moore"), 
+                             order = NULL, len = NULL,
+                             limits = NULL, split_by = NULL, 
+                             split_arrange = c("interleave", "tile"),
+                             ...) {
   
   curve <- match.arg(curve)
   
   envir <- parent.frame()
   
-  dat <- sfcurve(curve = curve, order = order, limits = c(0, 1), ...)
+  dat <- sfcurve(data, {{ pos_vars }},
+                 curve = curve,
+                 order = order,
+                 len = len,
+                 limits = limits,
+                 split_by = split_by,
+                 split_arrange = split_arrange)
   
-  curve_interp <- attr(dat, "curve_interp")
+ 
+  p <- ggplot2::ggplot(dat, environment = envir) +
+    ggplot2::coord_equal() +
+    theme_curve()
+  class(p) <- c('ggsfc', class(p))
   
-  if(hasName(data, "x")) {
-    colnames(data)[colnames(data) == "x"] <- "x_orig"
-  }
-  if(hasName(data, "y")) {
-    colnames(data)[colnames(data) == "y"] <- "y_orig"
-  }
-  fake_data_names <- setdiff(names(data), c("x", "y"))
-  fake_data <- data.frame(matrix(NA, nrow = nrow(dat), ncol = length(fake_data_names)))
-  names(fake_data) <- fake_data_names
+  p
+  
+}
 
-  dat <- cbind(dat, fake_data)
+#'@export
+ggsfc.sfcurve <- function(data, ...) {
+
+  envir <- parent.frame()
   
-  attr(dat, "data") <- data
-  attr(dat, "curve_interp") <- curve_interp
-  
-  p <- ggplot(dat, environment = envir) +
+  p <- ggplot2::ggplot(data, environment = envir) +
+    ggplot2::coord_equal() +
     theme_curve()
   class(p) <- c('ggsfc', class(p))
   

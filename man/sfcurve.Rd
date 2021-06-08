@@ -5,10 +5,14 @@
 \title{Make a space-filling curve object}
 \usage{
 sfcurve(
+  data,
+  pos_vars,
   curve = c("hilbert", "flowsnake", "sierpinski", "moore"),
   order = NULL,
   len = NULL,
-  limits = c(-1, 1)
+  limits = NULL,
+  split_by = NULL,
+  split_arrange = c("interleave", "tile")
 )
 }
 \arguments{

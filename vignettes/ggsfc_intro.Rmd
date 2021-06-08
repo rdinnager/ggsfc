@@ -18,16 +18,34 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(ggsfc)
 library(sf)
-
+library(gginnards)
 ```
 
 ```{r try_out}
 data("sim_snps")
 
-curve <- sfcurve(sim_snps, pos, order = 5)
+curve <- sfcurve(sim_snps, pos, order = 7)
 
 curve <- sfcurve(sim_snps %>% dplyr::mutate(pos2 = pos + 1), 
                  c(pos, pos2), order = 5)
+
+ggsfc(sim_snps, pos_vars = pos, order = 7) + 
+  geom_sfc_path(aes(pos = pos), colour = "grey40") +
+  geom_sfc_point(aes(pos = pos, col = freq), alpha = 0.6) +
+  scale_colour_viridis_c(trans = "sqrt")
+
+ggsfc(sim_snps, pos_vars = pos, order = 5, curve = "flowsnake") + 
+  geom_sfc_path(aes(pos = pos), colour = "grey40") +
+  geom_sfc_point(aes(pos = pos, col = freq), alpha = 0.6) +
+  scale_colour_viridis_c(trans = "sqrt")
+
+
+ggsfc(curve) + 
+  geom_sfc_path(aes(pos = pos)) +
+  geom_sfc_point(aes(pos = pos, col = freq), alpha = 0.6)
+
+
+tt
 
 tt <- ggsfc(sim_snps, order = 5) +
   geom_sfc_path() +

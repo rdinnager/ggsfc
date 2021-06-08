@@ -4,20 +4,9 @@
 \alias{ggsfc}
 \title{Setup a ggsfc plot object}
 \usage{
-ggsfc(
-  data,
-  curve = c("hilbert", "flowsnake", "sierpinski", "moore"),
-  order = NULL,
-  ...
-)
+ggsfc(data, ...)
 }
 \arguments{
-\item{curve}{Which space-filling curve to make? Must be one of: "hilbert", "flowsnake",
-"sierpinski", or "moore". See details for descriptions.}
-
-\item{order}{What order should the curve be? This controls the "length" of the fractal curve
-(e.g. how many points are there in it?). In other words, higher order curves fill the space more.}
-
 \item{...}{Further arguments to be passed to \code{\link{sfcurve}}}
 }
 \value{
